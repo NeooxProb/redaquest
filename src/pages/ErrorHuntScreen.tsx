@@ -1,302 +1,669 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
+import { errorHuntQuestions } from '../data/errorHuntQuestions'
 import type { NavProps } from '../types/navigation'
 
-interface Word {
-  id: number
-  text: string
-  isError: boolean
-  errorType: string
-  errorExplanation: string
-}
+type AnswerState = 'waiting' | 'correct' | 'wrong'
 
-const PARAGRAPH_WORDS: Word[] = [
-  { id: 1, text: 'O', isError: false, errorType: '', errorExplanation: '' },
-  { id: 2, text: 'Brasil', isError: false, errorType: '', errorExplanation: '' },
-  { id: 3, text: 'enfrenta', isError: false, errorType: '', errorExplanation: '' },
-  { id: 4, text: 'sérios', isError: false, errorType: '', errorExplanation: '' },
-  { id: 5, text: 'problemas', isError: false, errorType: '', errorExplanation: '' },
-  { id: 6, text: 'de', isError: false, errorType: '', errorExplanation: '' },
-  { id: 7, text: 'educação,', isError: false, errorType: '', errorExplanation: '' },
-  { id: 8, text: 'sendo', isError: false, errorType: '', errorExplanation: '' },
-  { id: 9, text: 'que', isError: false, errorType: '', errorExplanation: '' },
-  { id: 10, text: 'muitos', isError: false, errorType: '', errorExplanation: '' },
-  { id: 11, text: 'alunos', isError: false, errorType: '', errorExplanation: '' },
-  { id: 12, text: 'abandonam', isError: false, errorType: '', errorExplanation: '' },
-  { id: 13, text: 'a', isError: false, errorType: '', errorExplanation: '' },
-  { id: 14, text: 'escola', isError: false, errorType: '', errorExplanation: '' },
-  { id: 15, text: 'precocemente.', isError: false, errorType: '', errorExplanation: '' },
-  { id: 16, text: 'Isso', isError: false, errorType: '', errorExplanation: '' },
-  { id: 17, text: 'se', isError: false, errorType: '', errorExplanation: '' },
-  { id: 18, text: 'deve', isError: false, errorType: '', errorExplanation: '' },
-  { id: 19, text: 'a', isError: false, errorType: '', errorExplanation: '' },
-  { id: 20, text: 'fatores', isError: false, errorType: '', errorExplanation: '' },
-  { id: 21, text: 'diverso', isError: true, errorType: 'Concordância', errorExplanation: 'O adjetivo "diverso" deve concordar com o substantivo "fatores" (masculino plural): "diversos".' },
-  { id: 22, text: 'como', isError: false, errorType: '', errorExplanation: '' },
-  { id: 23, text: 'a', isError: false, errorType: '', errorExplanation: '' },
-  { id: 24, text: 'pobreza', isError: false, errorType: '', errorExplanation: '' },
-  { id: 25, text: 'e', isError: false, errorType: '', errorExplanation: '' },
-  { id: 26, text: 'a', isError: false, errorType: '', errorExplanation: '' },
-  { id: 27, text: 'necessidade', isError: false, errorType: '', errorExplanation: '' },
-  { id: 28, text: 'de', isError: false, errorType: '', errorExplanation: '' },
-  { id: 29, text: 'trabalhar', isError: false, errorType: '', errorExplanation: '' },
-  { id: 30, text: 'cedo.', isError: false, errorType: '', errorExplanation: '' },
-  { id: 31, text: 'Portanto,', isError: false, errorType: '', errorExplanation: '' },
-  { id: 32, text: 'é', isError: false, errorType: '', errorExplanation: '' },
-  { id: 33, text: 'essencial', isError: false, errorType: '', errorExplanation: '' },
-  { id: 34, text: 'que', isError: false, errorType: '', errorExplanation: '' },
-  { id: 35, text: 'o', isError: false, errorType: '', errorExplanation: '' },
-  { id: 36, text: 'governo', isError: false, errorType: '', errorExplanation: '' },
-  { id: 37, text: 'invista', isError: false, errorType: '', errorExplanation: '' },
-  { id: 38, text: 'em', isError: false, errorType: '', errorExplanation: '' },
-  { id: 39, text: 'politicas', isError: true, errorType: 'Acentuação', errorExplanation: 'A palavra "políticas" é paroxítona terminada em ditongo crescente, portanto deve ser acentuada: "políticas".' },
-  { id: 40, text: 'publicas', isError: true, errorType: 'Acentuação', errorExplanation: 'A palavra "públicas" é proparoxítona, sempre acentuada: "públicas".' },
-  { id: 41, text: 'que', isError: false, errorType: '', errorExplanation: '' },
-  { id: 42, text: 'garantam', isError: false, errorType: '', errorExplanation: '' },
-  { id: 43, text: 'a', isError: false, errorType: '', errorExplanation: '' },
-  { id: 44, text: 'permanencia', isError: true, errorType: 'Acentuação', errorExplanation: 'A palavra "permanência" possui ditongo decrescente "ei" na penúltima sílaba, portanto é acentuada: "permanência".' },
-  { id: 45, text: 'dos', isError: false, errorType: '', errorExplanation: '' },
-  { id: 46, text: 'estudantes', isError: false, errorType: '', errorExplanation: '' },
-  { id: 47, text: 'nas', isError: false, errorType: '', errorExplanation: '' },
-  { id: 48, text: 'escolas.', isError: false, errorType: '', errorExplanation: '' },
-]
+export default function ErrorHuntScreen({ navigate }: NavProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(
+    null,
+  )
+  const [answerState, setAnswerState] =
+    useState<AnswerState>('waiting')
+  const [hearts, setHearts] = useState(5)
+  const [earnedXp, setEarnedXp] = useState(0)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [finished, setFinished] = useState(false)
 
-const ERRORS = PARAGRAPH_WORDS.filter((w) => w.isError)
+  const currentQuestion = errorHuntQuestions[currentIndex]
 
-type Phase = 'hunting' | 'results'
+  const progress = Math.round(
+    ((currentIndex + 1) / errorHuntQuestions.length) * 100,
+  )
 
-export default function ErrorHuntScreen({ navigate, events }: NavProps) {
-  const [selected, setSelected] = useState<Set<number>>(new Set())
-  const [phase, setPhase] = useState<Phase>('hunting')
-  const [expandedError, setExpandedError] = useState<number | null>(null)
+  function selectOption(optionId: number, isCorrect: boolean) {
+    if (answerState !== 'waiting') {
+      return
+    }
 
-  const toggle = (id: number) => {
-    if (phase !== 'hunting') return
-    setSelected((prev) => {
-      const n = new Set(prev)
-      if (n.has(id)) n.delete(id)
-      else n.add(id)
-      return n
-    })
+    setSelectedOptionId(optionId)
+
+    if (isCorrect) {
+      setAnswerState('correct')
+      setEarnedXp((currentXp) => currentXp + currentQuestion.xp)
+      setCorrectAnswers((currentTotal) => currentTotal + 1)
+      return
+    }
+
+    setAnswerState('wrong')
+    setHearts((currentHearts) => Math.max(currentHearts - 1, 0))
   }
 
-  const correctHits = [...selected].filter((id) => PARAGRAPH_WORDS.find((w) => w.id === id)?.isError).length
-  const falsePositives = [...selected].filter((id) => !PARAGRAPH_WORDS.find((w) => w.id === id)?.isError).length
-  const totalErrors = ERRORS.length
-  const xpEarned = Math.max(0, correctHits * 40 - falsePositives * 10)
+  function continueActivity() {
+    const isLastQuestion =
+      currentIndex === errorHuntQuestions.length - 1
 
-  return (
-    <div style={{ fontFamily: 'Nunito, sans-serif', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #F97316 0%, #EF4444 100%)', padding: '8px 20px 24px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <button
-            onClick={() => navigate('missions')}
-            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 800, padding: '5px 10px', cursor: 'pointer', fontFamily: 'Nunito' }}
-          >
-            ←
-          </button>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: 'white' }}>🔍 Caça aos Erros</div>
-            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 600 }}>Toque nas palavras com erro</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '6px 12px', textAlign: 'center' }}>
-            <div style={{ color: 'white', fontSize: 16, fontWeight: 900 }}>{selected.size}</div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 700 }}>MARCADAS</div>
-          </div>
-        </div>
+    if (isLastQuestion || hearts === 0) {
+      setFinished(true)
+      return
+    }
 
-        {/* Instructions */}
-        {phase === 'hunting' && (
-          <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '10px 14px', fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-            💡 Encontre os {totalErrors} erros gramaticais e de acentuação escondidos no texto
-          </div>
-        )}
-      </div>
+    setCurrentIndex((index) => index + 1)
+    setSelectedOptionId(null)
+    setAnswerState('waiting')
+  }
 
-      <div style={{ flex: 1, padding: '20px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Text */}
-        <div
+  function restartActivity() {
+    setCurrentIndex(0)
+    setSelectedOptionId(null)
+    setAnswerState('waiting')
+    setHearts(5)
+    setEarnedXp(0)
+    setCorrectAnswers(0)
+    setFinished(false)
+  }
+
+  function getOptionStyle(
+    optionId: number,
+    isCorrect: boolean,
+  ): CSSProperties {
+    const isSelected = selectedOptionId === optionId
+
+    if (answerState === 'correct' && isSelected) {
+      return {
+        background: '#dcfce7',
+        border: '2px solid #22c55e',
+        color: '#166534',
+      }
+    }
+
+    if (answerState === 'wrong' && isSelected) {
+      return {
+        background: '#fee2e2',
+        border: '2px solid #ef4444',
+        color: '#991b1b',
+      }
+    }
+
+    if (answerState === 'wrong' && isCorrect) {
+      return {
+        background: '#dcfce7',
+        border: '2px solid #22c55e',
+        color: '#166534',
+      }
+    }
+
+    return {
+      background: '#ffffff',
+      border: '2px solid #e2e8f0',
+      color: '#334155',
+    }
+  }
+
+  if (finished) {
+    const completedActivity =
+      currentIndex === errorHuntQuestions.length - 1 &&
+      hearts > 0
+
+    return (
+      <div
+        style={{
+          alignItems: 'center',
+          background:
+            'linear-gradient(145deg, #fff7ed 0%, #f8fafc 50%, #eef2ff 100%)',
+          display: 'flex',
+          fontFamily: 'Nunito, sans-serif',
+          justifyContent: 'center',
+          minHeight: '100%',
+          padding: 24,
+          width: '100%',
+        }}
+      >
+        <main
           style={{
-            background: 'white',
-            borderRadius: 18,
-            padding: '20px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 30,
+            boxShadow: '0 22px 60px rgba(15, 23, 42, 0.12)',
+            maxWidth: 580,
+            padding: '38px clamp(24px, 5vw, 48px)',
+            textAlign: 'center',
+            width: '100%',
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#94a3b8', marginBottom: 12, letterSpacing: '0.06em' }}>
-            ENCONTRE OS ERROS:
+          <div
+            style={{
+              alignItems: 'center',
+              background: completedActivity
+                ? 'linear-gradient(135deg, #f97316, #ef4444)'
+                : 'linear-gradient(135deg, #7c3aed, #3b82f6)',
+              borderRadius: 999,
+              display: 'flex',
+              fontSize: 48,
+              height: 100,
+              justifyContent: 'center',
+              margin: '0 auto 22px',
+              width: 100,
+            }}
+          >
+            {completedActivity ? '🔎' : '💪'}
           </div>
-          <div style={{ lineHeight: 2.2, fontSize: 15, color: '#1e293b', fontFamily: 'Inter', fontWeight: 400 }}>
-            {PARAGRAPH_WORDS.map((word) => {
-              const isSelected = selected.has(word.id)
-              const showResult = phase === 'results'
 
-              let bg = 'transparent'
-              let color = '#1e293b'
-              let border = 'none'
-              let decoration = 'none'
+          <h1
+            style={{
+              color: '#172033',
+              fontSize: 'clamp(27px, 5vw, 38px)',
+              fontWeight: 900,
+              margin: 0,
+            }}
+          >
+            {completedActivity
+              ? 'Caça concluída!'
+              : 'Suas vidas acabaram'}
+          </h1>
 
-              if (showResult) {
-                if (word.isError && isSelected) {
-                  bg = '#DCFCE7'
-                  color = '#166534'
-                  border = '1.5px solid #22C55E'
-                } else if (word.isError && !isSelected) {
-                  bg = '#FEF3C7'
-                  color = '#92400e'
-                  border = '1.5px solid #F59E0B'
-                  decoration = 'underline'
-                } else if (!word.isError && isSelected) {
-                  bg = '#FEE2E2'
-                  color = '#991b1b'
-                  border = '1.5px solid #EF4444'
-                }
-              } else if (isSelected) {
-                bg = '#EDE9FE'
-                color = '#5b21b6'
-                border = '1.5px solid #7C3AED'
-              }
+          <p
+            style={{
+              color: '#64748b',
+              fontSize: 15,
+              fontWeight: 700,
+              lineHeight: 1.6,
+              margin: '12px auto 26px',
+              maxWidth: 430,
+            }}
+          >
+            {completedActivity
+              ? 'Você encontrou os erros e aprendeu como melhorar esses trechos.'
+              : 'Tente novamente para encontrar todos os erros da atividade.'}
+          </p>
 
-              return (
-                <span key={word.id} style={{ display: 'inline' }}>
-                  <span
-                    onClick={() => toggle(word.id)}
-                    style={{
-                      display: 'inline-block',
-                      background: bg,
-                      color,
-                      border,
-                      borderRadius: 6,
-                      padding: '1px 4px',
-                      margin: '0 2px',
-                      cursor: phase === 'hunting' ? 'pointer' : 'default',
-                      textDecoration: decoration,
-                      transition: 'all 0.15s',
-                      fontWeight: isSelected || (showResult && word.isError) ? 700 : 400,
-                    }}
-                  >
-                    {word.text}
-                  </span>
-                </span>
-              )
-            })}
+          <div
+            style={{
+              display: 'grid',
+              gap: 12,
+              gridTemplateColumns:
+                'repeat(auto-fit, minmax(120px, 1fr))',
+              marginBottom: 28,
+            }}
+          >
+            <ResultCard
+              icon="✅"
+              value={`${correctAnswers}/${errorHuntQuestions.length}`}
+              label="Acertos"
+            />
+
+            <ResultCard
+              icon="⚡"
+              value={`${earnedXp} XP`}
+              label="Conquistados"
+            />
+
+            <ResultCard
+              icon="❤️"
+              value={String(hearts)}
+              label="Vidas restantes"
+            />
           </div>
-        </div>
 
-        {/* Results panel */}
-        {phase === 'results' && (
-          <div style={{ background: 'white', borderRadius: 18, padding: '18px', boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }}>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              {[
-                { label: 'Acertos', value: correctHits, color: '#22C55E', bg: '#DCFCE7', total: totalErrors },
-                { label: 'Erros', value: falsePositives, color: '#EF4444', bg: '#FEE2E2', total: selected.size - correctHits },
-                { label: 'XP Ganho', value: xpEarned, color: '#7C3AED', bg: '#EDE9FE', total: null },
-              ].map((s) => (
-                <div key={s.label} style={{ flex: 1, background: s.bg, borderRadius: 14, padding: '12px 8px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>
-                    {s.value}{s.total !== null ? `/${s.total}` : ''}
-                  </div>
-                  <div style={{ fontSize: 10, color: s.color, fontWeight: 800 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
+          <button
+            type="button"
+            onClick={restartActivity}
+            style={{
+              background:
+                'linear-gradient(90deg, #f97316, #ef4444)',
+              border: 0,
+              borderRadius: 15,
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 15,
+              fontWeight: 900,
+              minHeight: 50,
+              width: '100%',
+            }}
+          >
+            Tentar novamente
+          </button>
 
-            <div style={{ fontWeight: 900, fontSize: 14, color: '#1e293b', marginBottom: 10 }}>
-              📚 Explicações dos erros:
-            </div>
-            {ERRORS.map((e) => (
-              <div
-                key={e.id}
+          <button
+            type="button"
+            onClick={() => navigate('missions')}
+            style={{
+              background: '#f1f5f9',
+              border: 0,
+              borderRadius: 15,
+              color: '#475569',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 900,
+              marginTop: 10,
+              minHeight: 48,
+              width: '100%',
+            }}
+          >
+            Voltar para Missões
+          </button>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        background: '#fff7ed',
+        fontFamily: 'Nunito, sans-serif',
+        minHeight: '100%',
+        width: '100%',
+      }}
+    >
+      <header
+        style={{
+          background:
+            'linear-gradient(135deg, #ea580c 0%, #f97316 55%, #ef4444 100%)',
+          color: '#ffffff',
+          padding: '20px clamp(18px, 4vw, 48px) 28px',
+        }}
+      >
+        <div
+          style={{
+            margin: '0 auto',
+            maxWidth: 1100,
+            width: '100%',
+          }}
+        >
+          <div
+            style={{
+              alignItems: 'center',
+              display: 'flex',
+              gap: 14,
+              justifyContent: 'space-between',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate('missions')}
+              aria-label="Voltar para Missões"
+              style={{
+                alignItems: 'center',
+                background: 'rgba(255,255,255,0.18)',
+                border: '1px solid rgba(255,255,255,0.22)',
+                borderRadius: 13,
+                color: '#ffffff',
+                cursor: 'pointer',
+                display: 'flex',
+                fontFamily: 'inherit',
+                fontSize: 22,
+                fontWeight: 900,
+                height: 44,
+                justifyContent: 'center',
+                width: 44,
+              }}
+            >
+              ←
+            </button>
+
+            <div style={{ flex: 1 }}>
+              <h1
                 style={{
-                  background: '#f8fafc',
-                  borderRadius: 12,
-                  marginBottom: 8,
-                  overflow: 'hidden',
-                  border: '1.5px solid #e2e8f0',
+                  fontSize: 'clamp(20px, 4vw, 29px)',
+                  fontWeight: 900,
+                  lineHeight: 1.1,
+                  margin: 0,
                 }}
               >
-                <div
-                  onClick={() => setExpandedError(expandedError === e.id ? null : e.id)}
+                🔍 Caça aos Erros
+              </h1>
+
+              <p
+                style={{
+                  color: 'rgba(255,255,255,0.82)',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  margin: '5px 0 0',
+                }}
+              >
+                Questão {currentIndex + 1} de{' '}
+                {errorHuntQuestions.length}
+              </p>
+            </div>
+
+            <div
+              aria-label={`${hearts} vidas restantes`}
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                flexShrink: 0,
+                gap: 4,
+              }}
+            >
+              {Array.from({ length: 5 }).map((_, index) => (
+                <span
+                  key={index}
                   style={{
-                    padding: '12px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    cursor: 'pointer',
+                    filter:
+                      index < hearts ? 'none' : 'grayscale(1)',
+                    fontSize: 'clamp(18px, 3vw, 24px)',
+                    opacity: index < hearts ? 1 : 0.28,
                   }}
                 >
-                  <div
-                    style={{
-                      background: selected.has(e.id) ? '#DCFCE7' : '#FEE2E2',
-                      color: selected.has(e.id) ? '#166534' : '#991b1b',
-                      borderRadius: 8,
-                      padding: '3px 10px',
-                      fontSize: 13,
-                      fontWeight: 800,
-                    }}
-                  >
-                    "{e.text}"
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#F97316' }}>{e.errorType}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>
-                      {selected.has(e.id) ? '✓ Você encontrou!' : '✗ Você não marcou'}
-                    </div>
-                  </div>
-                  <span style={{ color: '#94a3b8', fontSize: 12 }}>{expandedError === e.id ? '▲' : '▼'}</span>
-                </div>
-                {expandedError === e.id && (
-                  <div style={{ padding: '0 14px 12px', fontSize: 13, color: '#475569', fontWeight: 600, lineHeight: 1.6, borderTop: '1px solid #e2e8f0' }}>
-                    <div style={{ paddingTop: 10 }}>{e.errorExplanation}</div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  ❤️
+                </span>
+              ))}
+            </div>
           </div>
-        )}
 
-        {/* Action button */}
-        {phase === 'hunting' ? (
-          <button
-            onClick={() => { setPhase('results'); events.triggerXP(xpEarned, 150, 700) }}
-            disabled={selected.size === 0}
+          <div
             style={{
-              width: '100%',
-              background: selected.size > 0 ? 'linear-gradient(135deg, #F97316, #EF4444)' : '#e2e8f0',
-              color: selected.size > 0 ? 'white' : '#94a3b8',
-              border: 'none',
-              borderRadius: 16,
-              padding: '18px',
-              fontSize: 16,
-              fontWeight: 900,
-              cursor: selected.size > 0 ? 'pointer' : 'not-allowed',
-              boxShadow: selected.size > 0 ? '0 6px 20px rgba(249,115,22,0.4)' : 'none',
-              fontFamily: 'Nunito',
+              alignItems: 'center',
+              display: 'flex',
+              gap: 14,
+              marginTop: 23,
             }}
           >
-            🔍 Verificar Erros ({selected.size} marcados)
-          </button>
-        ) : (
-          <button
-            onClick={() => { if (correctHits === totalErrors) events.triggerAchievement({ icon: '🔍', title: 'Olho de Águia!', xp: 100 }); navigate('missions') }}
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.24)',
+                borderRadius: 999,
+                flex: 1,
+                height: 11,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  background: '#ffffff',
+                  borderRadius: 999,
+                  height: '100%',
+                  transition: 'width 300ms ease',
+                  width: `${progress}%`,
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.18)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 14,
+                fontSize: 13,
+                fontWeight: 900,
+                minWidth: 75,
+                padding: '9px 12px',
+                textAlign: 'center',
+              }}
+            >
+              +{earnedXp} XP
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main
+        style={{
+          margin: '0 auto',
+          maxWidth: 1100,
+          padding: '30px clamp(17px, 4vw, 48px) 48px',
+          width: '100%',
+        }}
+      >
+        <section
+          style={{
+            background: '#ffffff',
+            border: '1px solid #fed7aa',
+            borderRadius: 26,
+            boxShadow: '0 16px 36px rgba(154, 52, 18, 0.08)',
+            padding: 'clamp(23px, 5vw, 42px)',
+          }}
+        >
+          <span
             style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #7C3AED, #3B82F6)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 16,
-              padding: '18px',
-              fontSize: 16,
+              color: '#ea580c',
+              fontSize: 12,
               fontWeight: 900,
-              cursor: 'pointer',
-              boxShadow: '0 6px 20px rgba(124,58,237,0.4)',
-              fontFamily: 'Nunito',
+              letterSpacing: 1,
             }}
           >
-            🏆 Próxima Missão → +{xpEarned} XP
-          </button>
+            ENCONTRE O PROBLEMA
+          </span>
+
+          <h2
+            style={{
+              color: '#172033',
+              fontSize: 'clamp(21px, 4vw, 30px)',
+              fontWeight: 900,
+              margin: '8px 0 24px',
+            }}
+          >
+            {currentQuestion.instruction}
+          </h2>
+
+          <div
+            style={{
+              background: '#fff7ed',
+              border: '1px solid #fed7aa',
+              borderRadius: 20,
+              color: '#334155',
+              fontSize: 'clamp(17px, 3vw, 23px)',
+              fontWeight: 800,
+              lineHeight: 2,
+              padding: '24px clamp(18px, 4vw, 30px)',
+            }}
+          >
+            {currentQuestion.textBefore}
+
+            {currentQuestion.options.map((option, index) => (
+              <span key={option.id}>
+                <button
+                  type="button"
+                  disabled={answerState !== 'waiting'}
+                  onClick={() =>
+                    selectOption(option.id, option.isCorrect)
+                  }
+                  style={{
+                    ...getOptionStyle(
+                      option.id,
+                      option.isCorrect,
+                    ),
+                    borderRadius: 10,
+                    cursor:
+                      answerState === 'waiting'
+                        ? 'pointer'
+                        : 'default',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit',
+                    fontWeight: 900,
+                    margin: '4px',
+                    padding: '3px 10px',
+                    transition:
+                      'background 160ms ease, border-color 160ms ease',
+                  }}
+                >
+                  {option.text}
+                </button>
+
+                {index < currentQuestion.options.length - 1
+                  ? ' '
+                  : ''}
+              </span>
+            ))}
+
+            {currentQuestion.textAfter}
+          </div>
+
+          <p
+            style={{
+              color: '#64748b',
+              fontSize: 13,
+              fontWeight: 700,
+              lineHeight: 1.6,
+              margin: '18px 0 0',
+            }}
+          >
+            Clique na palavra ou expressão que contém o erro.
+          </p>
+        </section>
+
+        {answerState !== 'waiting' && (
+          <section
+            style={{
+              background:
+                answerState === 'correct'
+                  ? '#dcfce7'
+                  : '#fee2e2',
+              border:
+                answerState === 'correct'
+                  ? '1px solid #86efac'
+                  : '1px solid #fca5a5',
+              borderRadius: 22,
+              marginTop: 20,
+              padding: 21,
+            }}
+          >
+            <div
+              style={{
+                alignItems: 'flex-start',
+                display: 'flex',
+                gap: 13,
+              }}
+            >
+              <span style={{ fontSize: 30 }}>
+                {answerState === 'correct' ? '✅' : '❌'}
+              </span>
+
+              <div style={{ flex: 1 }}>
+                <h2
+                  style={{
+                    color:
+                      answerState === 'correct'
+                        ? '#166534'
+                        : '#991b1b',
+                    fontSize: 18,
+                    fontWeight: 900,
+                    margin: 0,
+                  }}
+                >
+                  {answerState === 'correct'
+                    ? `Erro encontrado! +${currentQuestion.xp} XP`
+                    : 'Esse trecho não contém o erro'}
+                </h2>
+
+                <p
+                  style={{
+                    color:
+                      answerState === 'correct'
+                        ? '#166534'
+                        : '#991b1b',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    lineHeight: 1.55,
+                    margin: '7px 0 0',
+                  }}
+                >
+                  {currentQuestion.explanation}
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.7)',
+                borderRadius: 15,
+                color: '#334155',
+                fontSize: 13,
+                fontWeight: 800,
+                lineHeight: 1.55,
+                marginTop: 16,
+                padding: 15,
+              }}
+            >
+              <strong
+                style={{
+                  color: '#166534',
+                  display: 'block',
+                  marginBottom: 5,
+                }}
+              >
+                Forma corrigida:
+              </strong>
+
+              {currentQuestion.correctedText}
+            </div>
+
+            <button
+              type="button"
+              onClick={continueActivity}
+              style={{
+                background:
+                  answerState === 'correct'
+                    ? '#16a34a'
+                    : '#dc2626',
+                border: 0,
+                borderRadius: 14,
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                fontWeight: 900,
+                marginTop: 17,
+                minHeight: 48,
+                width: '100%',
+              }}
+            >
+              {currentIndex === errorHuntQuestions.length - 1 ||
+              hearts === 0
+                ? 'Ver resultado'
+                : 'Continuar'}
+            </button>
+          </section>
         )}
-      </div>
+      </main>
+    </div>
+  )
+}
+
+interface ResultCardProps {
+  icon: string
+  value: string
+  label: string
+}
+
+function ResultCard({ icon, value, label }: ResultCardProps) {
+  return (
+    <div
+      style={{
+        background: '#f8fafc',
+        border: '1px solid #e2e8f0',
+        borderRadius: 18,
+        padding: 16,
+      }}
+    >
+      <div style={{ fontSize: 25 }}>{icon}</div>
+
+      <strong
+        style={{
+          color: '#ea580c',
+          display: 'block',
+          fontSize: 21,
+          fontWeight: 900,
+          marginTop: 5,
+        }}
+      >
+        {value}
+      </strong>
+
+      <span
+        style={{
+          color: '#94a3b8',
+          fontSize: 11,
+          fontWeight: 800,
+        }}
+      >
+        {label}
+      </span>
     </div>
   )
 }
