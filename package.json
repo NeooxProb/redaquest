@@ -1,5 +1,5 @@
 {
-  "name": "figma-make-app",
+  "name": "redaquest",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,11 +7,13 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
