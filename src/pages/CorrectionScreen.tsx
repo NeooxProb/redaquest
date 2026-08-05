@@ -1,447 +1,1037 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
+import { generateSimulatedCorrection } from '../services/correctionService'
+import type {
+  CompetencyCorrection,
+  FeedbackType,
+  SubmittedEssay,
+  TextHighlight,
+} from '../types/correction'
 import type { NavProps } from '../types/navigation'
 
-interface Competency {
-  code: string
-  title: string
-  score: number
-  max: number
-  color: string
-  emoji: string
-  comment: string
-  suggestions: string[]
-  highlight: string
+function loadSubmittedEssay(): SubmittedEssay | null {
+  const storedEssay = window.localStorage.getItem(
+    'redaquest:submitted-essay',
+  )
+
+  if (!storedEssay) {
+    return null
+  }
+
+  try {
+    return JSON.parse(storedEssay) as SubmittedEssay
+  } catch {
+    window.localStorage.removeItem(
+      'redaquest:submitted-essay',
+    )
+
+    return null
+  }
 }
 
-const COMPETENCIES: Competency[] = [
-  {
-    code: 'C1',
-    title: 'Domínio da Língua Culta',
-    score: 180,
-    max: 200,
-    color: '#3B82F6',
-    emoji: '📖',
-    comment: 'Excelente domínio gramatical. Poucos desvios da norma culta identificados no texto.',
-    suggestions: [
-      'Atentar para a regência verbal do verbo "implicar".',
-      'Revisar uso de vírgula antes de conjunção "e" em orações distintas.',
-    ],
-    highlight: 'A violência de gênero possui raízes históricas',
-  },
-  {
-    code: 'C2',
-    title: 'Compreensão do Tema',
-    score: 160,
-    max: 200,
-    color: '#7C3AED',
-    emoji: '🎯',
-    comment: 'Tema bem compreendido. O texto aborda a problemática com pertinência, mas pode aprofundar o recorte temático.',
-    suggestions: [
-      'Delimitar melhor o enfoque: violência física, psicológica ou digital?',
-      'Explicitar mais o impacto social do problema.',
-    ],
-    highlight: 'violência doméstica representa um dos maiores desafios',
-  },
-  {
-    code: 'C3',
-    title: 'Seleção e Organização das Informações',
-    score: 140,
-    max: 200,
-    color: '#22C55E',
-    emoji: '🧩',
-    comment: 'Argumentação razoável com uso de dados e referências. Faltam argumentos mais sofisticados e aprofundados.',
-    suggestions: [
-      'Acrescente mais um argumento com exemplificação concreta.',
-      'Use repertório mais variado — apenas 2 referências foram identificadas.',
-      'Aprofunde a análise das causas do problema.',
-    ],
-    highlight: 'De acordo com o IBGE, uma mulher é agredida a cada 4 minutos',
-  },
-  {
-    code: 'C4',
-    title: 'Coesão Textual',
-    score: 180,
-    max: 200,
-    color: '#F97316',
-    emoji: '🔗',
-    comment: 'Excelente uso de conectivos e articulação entre parágrafos. Texto flui naturalmente.',
-    suggestions: [
-      'Variar mais os conectivos — "entretanto" aparece 3 vezes.',
-      'Usar mais recursos de referenciação (anáforas, catáforas).',
-    ],
-    highlight: 'Entretanto, a violência de gênero possui raízes históricas',
-  },
-  {
-    code: 'C5',
-    title: 'Proposta de Intervenção',
-    score: 120,
-    max: 200,
-    color: '#EF4444',
-    emoji: '💡',
-    comment: 'Proposta presente mas incompleta. Faltam elementos obrigatórios: meio, detalhamento e finalidade.',
-    suggestions: [
-      'Especifique o AGENTE responsável pela ação.',
-      'Detalhe o MEIO pelo qual a ação será executada.',
-      'Inclua a FINALIDADE da intervenção com mais precisão.',
-      'Mencione pelo menos 2 ações complementares.',
-    ],
-    highlight: 'Portanto, para que o Estado brasileiro enfrente efetivamente',
-  },
-]
+export default function CorrectionScreen({
+  navigate,
+}: NavProps) {
+  const submittedEssay = useMemo(
+    () => loadSubmittedEssay(),
+    [],
+  )
 
-const totalScore = COMPETENCIES.reduce((sum, c) => sum + c.score, 0)
-const maxScore = 1000
+  const correction = useMemo(() => {
+    if (!submittedEssay) {
+      return null
+    }
 
-function ScoreCircle({ score, max }: { score: number; max: number }) {
-  const pct = score / max
-  const r = 52
-  const circumference = 2 * Math.PI * r
-  const offset = circumference * (1 - pct)
+    return generateSimulatedCorrection(submittedEssay)
+  }, [submittedEssay])
+
+  if (!submittedEssay || !correction) {
+    return (
+      <div
+        style={{
+          alignItems: 'center',
+          background:
+            'linear-gradient(145deg, #eef2ff, #f8fafc)',
+          display: 'flex',
+          fontFamily: 'Nunito, sans-serif',
+          justifyContent: 'center',
+          minHeight: '100%',
+          padding: 24,
+          width: '100%',
+        }}
+      >
+        <main
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 28,
+            boxShadow:
+              '0 22px 60px rgba(15, 23, 42, 0.1)',
+            maxWidth: 570,
+            padding: '42px clamp(24px, 5vw, 48px)',
+            textAlign: 'center',
+            width: '100%',
+          }}
+        >
+          <div
+            style={{
+              alignItems: 'center',
+              background:
+                'linear-gradient(135deg, #ede9fe, #dbeafe)',
+              borderRadius: 999,
+              display: 'flex',
+              fontSize: 48,
+              height: 100,
+              justifyContent: 'center',
+              margin: '0 auto 22px',
+              width: 100,
+            }}
+          >
+            📝
+          </div>
+
+          <h1
+            style={{
+              color: '#172033',
+              fontSize: 'clamp(26px, 5vw, 37px)',
+              fontWeight: 900,
+              margin: 0,
+            }}
+          >
+            Nenhuma redação enviada
+          </h1>
+
+          <p
+            style={{
+              color: '#64748b',
+              fontSize: 14,
+              fontWeight: 700,
+              lineHeight: 1.65,
+              margin: '12px 0 26px',
+            }}
+          >
+            Escolha um tema, escreva pelo menos 30 palavras e
+            envie o texto para receber uma correção
+            demonstrativa.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate('write')}
+            style={{
+              background:
+                'linear-gradient(90deg, #7c3aed, #3b82f6)',
+              border: 0,
+              borderRadius: 15,
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 900,
+              minHeight: 50,
+              width: '100%',
+            }}
+          >
+            Escrever uma redação
+          </button>
+        </main>
+      </div>
+    )
+  }
+
+  const scorePercentage = Math.round(
+    (correction.totalScore / correction.maximumScore) *
+      100,
+  )
 
   return (
-    <svg width={130} height={130} viewBox="0 0 130 130">
-      <circle cx={65} cy={65} r={r} fill="none" stroke="#e2e8f0" strokeWidth={10} />
-      <circle
-        cx={65}
-        cy={65}
-        r={r}
-        fill="none"
-        stroke="url(#scoreGradient)"
-        strokeWidth={10}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        transform="rotate(-90 65 65)"
-        style={{ transition: 'stroke-dashoffset 1s ease' }}
-      />
-      <defs>
-        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#7C3AED" />
-          <stop offset="100%" stopColor="#3B82F6" />
-        </linearGradient>
-      </defs>
-      <text x={65} y={60} textAnchor="middle" fontSize={30} fontWeight={900} fill="#1e293b" fontFamily="Nunito">
-        {score}
-      </text>
-      <text x={65} y={78} textAnchor="middle" fontSize={11} fill="#94a3b8" fontWeight={700} fontFamily="Nunito">
-        de {max}
-      </text>
-    </svg>
+    <div
+      style={{
+        background: '#f0f4ff',
+        fontFamily: 'Nunito, sans-serif',
+        minHeight: '100%',
+        width: '100%',
+      }}
+    >
+      <header
+        style={{
+          background:
+            'linear-gradient(135deg, #166534 0%, #16a34a 48%, #059669 100%)',
+          color: '#ffffff',
+          padding:
+            '28px clamp(20px, 4vw, 58px) 38px',
+        }}
+      >
+        <div
+          style={{
+            margin: '0 auto',
+            maxWidth: 1320,
+            width: '100%',
+          }}
+        >
+          <div
+            style={{
+              alignItems: 'center',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 24,
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ flex: '1 1 500px' }}>
+              <span
+                style={{
+                  color: 'rgba(255,255,255,0.72)',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Correção demonstrativa
+              </span>
+
+              <h1
+                style={{
+                  fontSize: 'clamp(27px, 4vw, 42px)',
+                  fontWeight: 900,
+                  lineHeight: 1.15,
+                  margin: '7px 0 9px',
+                }}
+              >
+                ✅ Sua redação foi analisada
+              </h1>
+
+              <p
+                style={{
+                  color: 'rgba(255,255,255,0.82)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  lineHeight: 1.55,
+                  margin: 0,
+                  maxWidth: 760,
+                }}
+              >
+                {submittedEssay.topic.icon}{' '}
+                {submittedEssay.topic.title}
+              </p>
+            </div>
+
+            <div
+              style={{
+                alignItems: 'center',
+                background: 'rgba(255,255,255,0.15)',
+                border:
+                  '1px solid rgba(255,255,255,0.22)',
+                borderRadius: 24,
+                display: 'flex',
+                gap: 17,
+                padding: 17,
+              }}
+            >
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  borderRadius: 999,
+                  color:
+                    correction.totalScore >= 800
+                      ? '#15803d'
+                      : correction.totalScore >= 600
+                        ? '#7c3aed'
+                        : '#c2410c',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: 94,
+                  justifyContent: 'center',
+                  width: 94,
+                }}
+              >
+                <strong
+                  style={{
+                    fontSize: 28,
+                    fontWeight: 900,
+                    lineHeight: 1,
+                  }}
+                >
+                  {correction.totalScore}
+                </strong>
+
+                <span
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: 10,
+                    fontWeight: 900,
+                    marginTop: 4,
+                  }}
+                >
+                  /1000
+                </span>
+              </div>
+
+              <div>
+                <strong
+                  style={{
+                    display: 'block',
+                    fontSize: 17,
+                    fontWeight: 900,
+                  }}
+                >
+                  Nota estimada
+                </strong>
+
+                <span
+                  style={{
+                    color: 'rgba(255,255,255,0.72)',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  {scorePercentage}% do total
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main
+        style={{
+          margin: '0 auto',
+          maxWidth: 1320,
+          padding:
+            '26px clamp(18px, 4vw, 58px) 52px',
+          width: '100%',
+        }}
+      >
+        <section
+          style={{
+            background: '#ffffff',
+            border: '1px solid #bbf7d0',
+            borderRadius: 24,
+            boxShadow:
+              '0 10px 30px rgba(22, 163, 74, 0.07)',
+            padding: 'clamp(20px, 4vw, 29px)',
+          }}
+        >
+          <div
+            style={{
+              alignItems: 'flex-start',
+              display: 'flex',
+              gap: 15,
+            }}
+          >
+            <div
+              style={{
+                alignItems: 'center',
+                background: '#dcfce7',
+                borderRadius: 16,
+                display: 'flex',
+                flexShrink: 0,
+                fontSize: 27,
+                height: 54,
+                justifyContent: 'center',
+                width: 54,
+              }}
+            >
+              🤖
+            </div>
+
+            <div>
+              <h2
+                style={{
+                  color: '#172033',
+                  fontSize: 20,
+                  fontWeight: 900,
+                  margin: 0,
+                }}
+              >
+                Resumo da análise
+              </h2>
+
+              <p
+                style={{
+                  color: '#64748b',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  lineHeight: 1.65,
+                  margin: '8px 0 0',
+                }}
+              >
+                {correction.summary}
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              alignItems: 'center',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 9,
+              marginTop: 19,
+            }}
+          >
+            <InfoPill
+              icon="📝"
+              text={`${submittedEssay.wordCount} palavras`}
+            />
+
+            <InfoPill
+              icon="⚡"
+              text={`+${submittedEssay.topic.rewardXp} XP`}
+            />
+
+            <InfoPill
+              icon="📅"
+              text={new Date(
+                submittedEssay.submittedAt,
+              ).toLocaleDateString('pt-BR')}
+            />
+          </div>
+        </section>
+
+        <section style={{ marginTop: 27 }}>
+          <SectionHeading
+            eyebrow="Nota por critério"
+            title="As cinco competências do ENEM"
+            description="A pontuação foi calculada por regras demonstrativas baseadas na estrutura e em palavras identificadas no texto."
+          />
+
+          <div
+            style={{
+              display: 'grid',
+              gap: 15,
+              gridTemplateColumns:
+                'repeat(auto-fit, minmax(min(100%, 350px), 1fr))',
+              marginTop: 16,
+            }}
+          >
+            {correction.competencies.map(
+              (competency) => (
+                <CorrectionCompetencyCard
+                  key={competency.id}
+                  competency={competency}
+                />
+              ),
+            )}
+          </div>
+        </section>
+
+        <div
+          style={{
+            display: 'grid',
+            gap: 22,
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
+            marginTop: 27,
+          }}
+        >
+          <FeedbackList
+            icon="✅"
+            title="Pontos positivos"
+            items={correction.strengths}
+            background="#f0fdf4"
+            border="#bbf7d0"
+            textColor="#166534"
+          />
+
+          <FeedbackList
+            icon="🎯"
+            title="O que melhorar"
+            items={correction.improvements}
+            background="#fff7ed"
+            border="#fed7aa"
+            textColor="#9a3412"
+          />
+        </div>
+
+        <section style={{ marginTop: 29 }}>
+          <SectionHeading
+            eyebrow="Comentários no texto"
+            title="Trechos analisados"
+            description="Veja observações produzidas a partir do início, da coesão e da conclusão do texto."
+          />
+
+          <div
+            style={{
+              display: 'grid',
+              gap: 14,
+              marginTop: 16,
+            }}
+          >
+            {correction.highlights.map((highlight) => (
+              <HighlightCard
+                key={highlight.id}
+                highlight={highlight}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 25,
+            boxShadow:
+              '0 10px 30px rgba(15,23,42,0.06)',
+            marginTop: 28,
+            padding: 'clamp(20px, 4vw, 29px)',
+          }}
+        >
+          <div
+            style={{
+              alignItems: 'center',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 14,
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  color: '#7c3aed',
+                  fontSize: 10,
+                  fontWeight: 900,
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Texto enviado
+              </span>
+
+              <h2
+                style={{
+                  color: '#172033',
+                  fontSize: 21,
+                  fontWeight: 900,
+                  margin: '5px 0 0',
+                }}
+              >
+                Sua redação
+              </h2>
+            </div>
+
+            <span
+              style={{
+                background: '#ede9fe',
+                borderRadius: 999,
+                color: '#6d28d9',
+                fontSize: 11,
+                fontWeight: 900,
+                padding: '8px 12px',
+              }}
+            >
+              {submittedEssay.wordCount} palavras
+            </span>
+          </div>
+
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 18,
+              color: '#334155',
+              fontFamily: 'Georgia, serif',
+              fontSize: 15,
+              fontWeight: 500,
+              lineHeight: 1.85,
+              marginTop: 17,
+              maxHeight: 430,
+              overflowY: 'auto',
+              padding: '21px clamp(17px, 4vw, 27px)',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {submittedEssay.content}
+          </div>
+        </section>
+
+        <section
+          style={{
+            alignItems: 'center',
+            background:
+              'linear-gradient(135deg, #ede9fe, #dbeafe)',
+            border: '1px solid #c4b5fd',
+            borderRadius: 25,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 20,
+            justifyContent: 'space-between',
+            marginTop: 25,
+            padding: '22px clamp(20px, 4vw, 30px)',
+          }}
+        >
+          <div style={{ flex: '1 1 420px' }}>
+            <h2
+              style={{
+                color: '#172033',
+                fontSize: 21,
+                fontWeight: 900,
+                margin: 0,
+              }}
+            >
+              Quer melhorar sua nota?
+            </h2>
+
+            <p
+              style={{
+                color: '#64748b',
+                fontSize: 13,
+                fontWeight: 700,
+                lineHeight: 1.55,
+                margin: '6px 0 0',
+              }}
+            >
+              Volte ao editor, revise os pontos indicados e
+              envie uma nova versão. O rascunho continua salvo.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 9,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate('write')}
+              style={{
+                background:
+                  'linear-gradient(90deg, #7c3aed, #3b82f6)',
+                border: 0,
+                borderRadius: 14,
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 900,
+                minHeight: 48,
+                padding: '11px 19px',
+              }}
+            >
+              ✍️ Reescrever redação
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('missions')}
+              style={{
+                background: '#ffffff',
+                border: '1px solid #c4b5fd',
+                borderRadius: 14,
+                color: '#6d28d9',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 900,
+                minHeight: 48,
+                padding: '11px 19px',
+              }}
+            >
+              Ver Missões
+            </button>
+          </div>
+        </section>
+
+        <p
+          style={{
+            color: '#94a3b8',
+            fontSize: 11,
+            fontWeight: 700,
+            lineHeight: 1.55,
+            margin: '18px auto 0',
+            maxWidth: 850,
+            textAlign: 'center',
+          }}
+        >
+          Esta correção é uma simulação para demonstrar o
+          funcionamento do RedaQuest. Ela não equivale a uma
+          avaliação oficial do ENEM nem utiliza inteligência
+          artificial nesta versão.
+        </p>
+      </main>
+    </div>
   )
 }
 
-const STUDY_PLAN = [
-  { emoji: '🔴', day: 'Hoje', task: 'Refaça a Proposta de Intervenção com 5 elementos obrigatórios', priority: 'Alta' },
-  { emoji: '🟠', day: 'Amanhã', task: 'Missão: Repertórios — desbloqueie 3 cartas lendárias', priority: 'Média' },
-  { emoji: '🟡', day: 'Em 2 dias', task: 'Praticar argumentação com dados do IBGE', priority: 'Média' },
-  { emoji: '🟢', day: 'Em 3 dias', task: 'Escrever redação completa sobre o mesmo tema', priority: 'Normal' },
-]
+interface InfoPillProps {
+  icon: string
+  text: string
+}
 
-export default function CorrectionScreen({ navigate, events }: NavProps) {
-  const [expandedC, setExpandedC] = useState<string | null>(null)
-  const [celebrated, setCelebrated] = useState(false)
-
-  const handleCelebrate = () => {
-    if (!celebrated) {
-      setCelebrated(true)
-      events.triggerXP(200, 140, 260)
-      if (totalScore >= 900) {
-        setTimeout(() => events.triggerAchievement({ icon: '⭐', title: 'Nota 900+!', xp: 300 }), 600)
-      }
-    }
-  }
-
-  const getGrade = (score: number) => {
-    if (score >= 900) return { label: 'Excelente', color: '#22C55E' }
-    if (score >= 700) return { label: 'Bom', color: '#3B82F6' }
-    if (score >= 500) return { label: 'Regular', color: '#F97316' }
-    return { label: 'Insuficiente', color: '#EF4444' }
-  }
-
-  const grade = getGrade(totalScore)
-
+function InfoPill({ icon, text }: InfoPillProps) {
   return (
-    <div style={{ fontFamily: 'Nunito, sans-serif', minHeight: '100%' }}>
-      {/* Header */}
-      <div
+    <span
+      style={{
+        background: '#f8fafc',
+        border: '1px solid #e2e8f0',
+        borderRadius: 999,
+        color: '#475569',
+        fontSize: 11,
+        fontWeight: 900,
+        padding: '8px 11px',
+      }}
+    >
+      {icon} {text}
+    </span>
+  )
+}
+
+interface SectionHeadingProps {
+  eyebrow: string
+  title: string
+  description: string
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: SectionHeadingProps) {
+  return (
+    <div>
+      <span
         style={{
-          background: 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%)',
-          padding: '8px 20px 32px',
+          color: '#7c3aed',
+          fontSize: 10,
+          fontWeight: 900,
+          letterSpacing: 0.8,
+          textTransform: 'uppercase',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <button
-            onClick={() => navigate('write')}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: 10,
-              color: 'white',
-              fontSize: 14,
-              fontWeight: 800,
-              padding: '5px 10px',
-              cursor: 'pointer',
-              fontFamily: 'Nunito',
-            }}
-          >
-            ←
-          </button>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: 'white' }}>🤖 Correção com IA</div>
-            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 600 }}>
-              Violência doméstica no Brasil
-            </div>
-          </div>
-        </div>
+        {eyebrow}
+      </span>
 
-        {/* Score display */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }} onClick={handleCelebrate}>
-          <ScoreCircle score={totalScore} max={maxScore} />
-          <div>
-            <div
-              style={{
-                display: 'inline-block',
-                background: grade.color,
-                color: 'white',
-                borderRadius: 20,
-                padding: '4px 14px',
-                fontSize: 13,
-                fontWeight: 900,
-                marginBottom: 8,
-              }}
-            >
-              {grade.label}
-            </div>
-            <div style={{ color: 'white', fontSize: 14, fontWeight: 700, lineHeight: 1.5 }}>
-              Sua redação obteve
-              <br />
-              <span style={{ fontSize: 28, fontWeight: 900 }}>{totalScore}</span>
-              <span style={{ fontSize: 16 }}> / 1000</span>
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 600, marginTop: 4 }}>
-              +200 XP conquistados! 🎉
-            </div>
-          </div>
-        </div>
-      </div>
+      <h2
+        style={{
+          color: '#172033',
+          fontSize: 23,
+          fontWeight: 900,
+          margin: '5px 0 0',
+        }}
+      >
+        {title}
+      </h2>
 
-      <div style={{ padding: '20px 20px' }}>
-        {/* Competency cards */}
-        <div style={{ fontWeight: 900, fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
-          📊 Competências
-        </div>
-        {COMPETENCIES.map((c) => {
-          const pct = (c.score / c.max) * 100
-          const expanded = expandedC === c.code
-          return (
-            <div
-              key={c.code}
-              style={{
-                background: 'white',
-                borderRadius: 18,
-                marginBottom: 12,
-                overflow: 'hidden',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-                border: `2px solid ${expanded ? c.color : 'transparent'}`,
-              }}
-            >
-              <div
-                onClick={() => setExpandedC(expanded ? null : c.code)}
-                style={{
-                  padding: '14px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  cursor: 'pointer',
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    background: c.color + '18',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 22,
-                    flexShrink: 0,
-                  }}
-                >
-                  {c.emoji}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 900, fontSize: 13, color: '#1e293b', marginBottom: 3 }}>
-                    {c.code} · {c.title}
-                  </div>
-                  <div style={{ height: 7, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
-                    <div
-                      style={{
-                        height: '100%',
-                        width: `${pct}%`,
-                        background: `linear-gradient(90deg, ${c.color}99, ${c.color})`,
-                        borderRadius: 4,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 18, color: c.color }}>{c.score}</div>
-                  <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700 }}>/{c.max}</div>
-                </div>
-                <div style={{ color: '#94a3b8', fontSize: 14, flexShrink: 0 }}>
-                  {expanded ? '▲' : '▼'}
-                </div>
-              </div>
+      <p
+        style={{
+          color: '#64748b',
+          fontSize: 12,
+          fontWeight: 700,
+          lineHeight: 1.55,
+          margin: '5px 0 0',
+        }}
+      >
+        {description}
+      </p>
+    </div>
+  )
+}
 
-              {expanded && (
-                <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${c.color}22` }}>
-                  <div style={{ fontSize: 13, color: '#475569', fontWeight: 600, lineHeight: 1.6, marginBottom: 12, paddingTop: 12 }}>
-                    💬 {c.comment}
-                  </div>
+interface CorrectionCompetencyCardProps {
+  competency: CompetencyCorrection
+}
 
-                  {/* Highlighted excerpt */}
-                  <div
-                    style={{
-                      background: c.color + '12',
-                      border: `1px solid ${c.color}33`,
-                      borderRadius: 10,
-                      padding: '10px 12px',
-                      marginBottom: 12,
-                      fontSize: 12,
-                      color: '#1e293b',
-                      fontStyle: 'italic',
-                      lineHeight: 1.5,
-                      fontFamily: 'Inter',
-                    }}
-                  >
-                    📌 "{c.highlight}"
-                  </div>
+function CorrectionCompetencyCard({
+  competency,
+}: CorrectionCompetencyCardProps) {
+  const percentage = Math.round(
+    (competency.score / competency.maximumScore) * 100,
+  )
 
-                  {/* Suggestions */}
-                  <div style={{ fontSize: 13, fontWeight: 900, color: '#1e293b', marginBottom: 8 }}>
-                    ✅ Sugestões práticas:
-                  </div>
-                  {c.suggestions.map((s, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'flex-start' }}>
-                      <div
-                        style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 10,
-                          background: c.color,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 10,
-                          color: 'white',
-                          fontWeight: 900,
-                          flexShrink: 0,
-                          marginTop: 1,
-                        }}
-                      >
-                        {i + 1}
-                      </div>
-                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 600, lineHeight: 1.5 }}>{s}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+  const progressColor =
+    percentage >= 90
+      ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+      : percentage >= 70
+        ? 'linear-gradient(90deg, #3b82f6, #7c3aed)'
+        : 'linear-gradient(90deg, #f97316, #ef4444)'
 
-        {/* Study plan */}
-        <div style={{ fontWeight: 900, fontSize: 16, color: '#1e293b', marginBottom: 12, marginTop: 8 }}>
-          📅 Plano de Estudos Personalizado
-        </div>
+  return (
+    <article
+      style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 22,
+        boxShadow:
+          '0 8px 24px rgba(15,23,42,0.05)',
+        padding: 19,
+      }}
+    >
+      <div
+        style={{
+          alignItems: 'flex-start',
+          display: 'flex',
+          gap: 13,
+        }}
+      >
         <div
           style={{
-            background: 'white',
-            borderRadius: 18,
-            padding: '16px',
-            marginBottom: 20,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            alignItems: 'center',
+            background:
+              'linear-gradient(135deg, #ede9fe, #dbeafe)',
+            borderRadius: 15,
+            color: '#6d28d9',
+            display: 'flex',
+            flexShrink: 0,
+            fontSize: 15,
+            fontWeight: 900,
+            height: 49,
+            justifyContent: 'center',
+            width: 49,
           }}
         >
-          {STUDY_PLAN.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                gap: 12,
-                alignItems: 'flex-start',
-                paddingBottom: i < STUDY_PLAN.length - 1 ? 14 : 0,
-                marginBottom: i < STUDY_PLAN.length - 1 ? 14 : 0,
-                borderBottom: i < STUDY_PLAN.length - 1 ? '1px solid #f1f5f9' : 'none',
-              }}
-            >
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{item.emoji}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 12, color: '#94a3b8', marginBottom: 2 }}>
-                  {item.day.toUpperCase()}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', lineHeight: 1.4 }}>
-                  {item.task}
-                </div>
-              </div>
-              <div
-                style={{
-                  background:
-                    item.priority === 'Alta' ? '#FEE2E2' : item.priority === 'Média' ? '#FEF3C7' : '#DCFCE7',
-                  color:
-                    item.priority === 'Alta' ? '#991b1b' : item.priority === 'Média' ? '#92400e' : '#166534',
-                  borderRadius: 20,
-                  padding: '2px 8px',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                {item.priority}
-              </div>
-            </div>
-          ))}
+          {competency.code}
         </div>
 
-        {/* Action buttons */}
-        <button
-          onClick={() => navigate('write')}
-          style={{
-            width: '100%',
-            background: 'linear-gradient(135deg, #7C3AED, #3B82F6)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 16,
-            padding: '18px',
-            fontSize: 16,
-            fontWeight: 900,
-            cursor: 'pointer',
-            boxShadow: '0 6px 24px rgba(124,58,237,0.4)',
-            fontFamily: 'Nunito',
-            marginBottom: 12,
-          }}
-        >
-          ✍️ Reescrever Redação
-        </button>
-        <button
-          onClick={() => navigate('missions')}
-          style={{
-            width: '100%',
-            background: 'white',
-            color: '#7C3AED',
-            border: '2px solid #7C3AED',
-            borderRadius: 16,
-            padding: '16px',
-            fontSize: 16,
-            fontWeight: 900,
-            cursor: 'pointer',
-            fontFamily: 'Nunito',
-          }}
-        >
-          ⚔️ Ir para Missões
-        </button>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              alignItems: 'flex-start',
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'space-between',
+            }}
+          >
+            <h3
+              style={{
+                color: '#172033',
+                fontSize: 15,
+                fontWeight: 900,
+                lineHeight: 1.3,
+                margin: 0,
+              }}
+            >
+              {competency.title}
+            </h3>
+
+            <strong
+              style={{
+                color: '#7c3aed',
+                flexShrink: 0,
+                fontSize: 15,
+                fontWeight: 900,
+              }}
+            >
+              {competency.score}/200
+            </strong>
+          </div>
+
+          <p
+            style={{
+              color: '#64748b',
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1.5,
+              margin: '7px 0 13px',
+            }}
+          >
+            {competency.feedback}
+          </p>
+
+          <div
+            style={{
+              background: '#e2e8f0',
+              borderRadius: 999,
+              height: 9,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                background: progressColor,
+                borderRadius: 999,
+                height: '100%',
+                width: `${percentage}%`,
+              }}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
+  )
+}
+
+interface FeedbackListProps {
+  icon: string
+  title: string
+  items: string[]
+  background: string
+  border: string
+  textColor: string
+}
+
+function FeedbackList({
+  icon,
+  title,
+  items,
+  background,
+  border,
+  textColor,
+}: FeedbackListProps) {
+  return (
+    <section
+      style={{
+        background,
+        border: `1px solid ${border}`,
+        borderRadius: 24,
+        padding: 21,
+      }}
+    >
+      <h2
+        style={{
+          color: textColor,
+          fontSize: 18,
+          fontWeight: 900,
+          margin: 0,
+        }}
+      >
+        {icon} {title}
+      </h2>
+
+      <div
+        style={{
+          display: 'grid',
+          gap: 10,
+          marginTop: 15,
+        }}
+      >
+        {items.map((item, index) => (
+          <div
+            key={`${title}-${index}`}
+            style={{
+              alignItems: 'flex-start',
+              background: 'rgba(255,255,255,0.72)',
+              borderRadius: 14,
+              color: '#475569',
+              display: 'flex',
+              fontSize: 12,
+              fontWeight: 700,
+              gap: 9,
+              lineHeight: 1.5,
+              padding: 12,
+            }}
+          >
+            <span
+              style={{
+                color: textColor,
+                fontWeight: 900,
+              }}
+            >
+              •
+            </span>
+
+            {item}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+const highlightStyles: Record<
+  FeedbackType,
+  {
+    background: string
+    border: string
+    color: string
+    icon: string
+    label: string
+  }
+> = {
+  positive: {
+    background: '#f0fdf4',
+    border: '#86efac',
+    color: '#166534',
+    icon: '✅',
+    label: 'Ponto positivo',
+  },
+  warning: {
+    background: '#fffbeb',
+    border: '#fcd34d',
+    color: '#a16207',
+    icon: '💡',
+    label: 'Atenção',
+  },
+  critical: {
+    background: '#fff7ed',
+    border: '#fdba74',
+    color: '#9a3412',
+    icon: '🎯',
+    label: 'Precisa melhorar',
+  },
+}
+
+interface HighlightCardProps {
+  highlight: TextHighlight
+}
+
+function HighlightCard({
+  highlight,
+}: HighlightCardProps) {
+  const style = highlightStyles[highlight.type]
+
+  return (
+    <article
+      style={{
+        background: style.background,
+        border: `1px solid ${style.border}`,
+        borderRadius: 20,
+        padding: 18,
+      }}
+    >
+      <div
+        style={{
+          alignItems: 'center',
+          display: 'flex',
+          gap: 8,
+        }}
+      >
+        <span>{style.icon}</span>
+
+        <strong
+          style={{
+            color: style.color,
+            fontSize: 12,
+            fontWeight: 900,
+            textTransform: 'uppercase',
+          }}
+        >
+          {style.label}
+        </strong>
+      </div>
+
+      <blockquote
+        style={{
+          background: 'rgba(255,255,255,0.72)',
+          borderLeft: `4px solid ${style.border}`,
+          borderRadius: '0 13px 13px 0',
+          color: '#475569',
+          fontFamily: 'Georgia, serif',
+          fontSize: 13,
+          fontStyle: 'italic',
+          lineHeight: 1.65,
+          margin: '13px 0 10px',
+          padding: 13,
+        }}
+      >
+        “{highlight.excerpt}”
+      </blockquote>
+
+      <p
+        style={{
+          color: style.color,
+          fontSize: 12,
+          fontWeight: 700,
+          lineHeight: 1.55,
+          margin: 0,
+        }}
+      >
+        {highlight.message}
+      </p>
+    </article>
   )
 }
