@@ -1,6 +1,7 @@
 import type { AppScreen, MainTab } from '../types/navigation'
 
 export const APP_PATHS: Record<AppScreen, string> = {
+  landing: '/',
   home: '/app',
   missions: '/app/missoes',
   library: '/app/biblioteca',
@@ -20,7 +21,12 @@ export const MAIN_TABS: MainTab[] = [
   'profile',
 ]
 
-export function getMainTabFromPath(pathname: string): MainTab | null {
-  const entry = MAIN_TABS.find((tab) => APP_PATHS[tab] === pathname)
+export function getMainTabFromPath(
+  pathname: string,
+): MainTab | null {
+  const entry = MAIN_TABS.find(
+    (tab) => APP_PATHS[tab] === pathname,
+  )
+
   return entry ?? null
 }
