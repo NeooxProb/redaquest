@@ -1,232 +1,1009 @@
+import { AchievementCard } from '../components/profile/AchievementCard'
+import { CompetencyCard } from '../components/profile/CompetencyCard'
+import {
+  achievements,
+  enemCompetencies,
+  profileStats,
+  userProfile,
+} from '../data/profileData'
 import type { NavProps } from '../types/navigation'
+import type { ProfileStat } from '../types/profile'
 
-interface Achievement {
-  id: number
-  icon: string
-  title: string
-  description: string
-  earned: boolean
-  date?: string
-}
+export default function ProfileScreen({
+  navigate,
+}: NavProps) {
+  const levelProgress = Math.min(
+    Math.round(
+      (userProfile.currentXp / userProfile.nextLevelXp) * 100,
+    ),
+    100,
+  )
 
-const achievements: Achievement[] = [
-  { id: 1, icon: '✍️', title: 'Primeira Redação', description: 'Enviou a primeira redação para correção', earned: true, date: 'Jan 2024' },
-  { id: 2, icon: '🔗', title: '100 Conectivos', description: 'Aprendeu 100 conectivos diferentes', earned: true, date: 'Feb 2024' },
-  { id: 3, icon: '⭐', title: 'Nota 900', description: 'Alcançou 900 pontos em uma redação', earned: true, date: 'Mar 2024' },
-  { id: 4, icon: '🔥', title: '30 Dias Seguidos', description: 'Estudou 30 dias consecutivos', earned: true, date: 'Mar 2024' },
-  { id: 5, icon: '🏆', title: 'Nota 1000', description: 'Alcançou a nota máxima do ENEM', earned: false },
-  { id: 6, icon: '💯', title: '100 Missões', description: 'Concluiu 100 missões no total', earned: false },
-  { id: 7, icon: '👑', title: 'Mestre dos Repertórios', description: 'Desbloqueou todas as cartas lendárias', earned: false },
-  { id: 8, icon: '🎯', title: 'Expert C5', description: 'Dominou a Competência 5 (Proposta)', earned: false },
-]
+  const collectionProgress = Math.round(
+    (userProfile.unlockedCards / userProfile.totalCards) * 100,
+  )
 
-const competencies = [
-  { name: 'C1 · Domínio da Língua', score: 180, max: 200, color: '#3B82F6' },
-  { name: 'C2 · Compreensão do Tema', score: 160, max: 200, color: '#7C3AED' },
-  { name: 'C3 · Argumentação', score: 140, max: 200, color: '#22C55E' },
-  { name: 'C4 · Coesão Textual', score: 180, max: 200, color: '#F97316' },
-  { name: 'C5 · Proposta de Intervenção', score: 120, max: 200, color: '#EF4444' },
-]
+  const totalCompetencyScore = enemCompetencies.reduce(
+    (total, competency) => total + competency.score,
+    0,
+  )
 
-const cards = [
-  { name: 'Aristóteles', emoji: '🏛️', rarity: 'Épica', color: '#7C3AED' },
-  { name: 'Constituição', emoji: '📜', rarity: 'Lendária', color: '#D97706' },
-  { name: 'Bauman', emoji: '💧', rarity: 'Épica', color: '#7C3AED' },
-  { name: 'IBGE 2023', emoji: '📊', rarity: 'Épica', color: '#7C3AED' },
-  { name: 'Black Mirror', emoji: '📺', rarity: 'Rara', color: '#3B82F6' },
-  { name: 'Entretanto', emoji: '🔗', rarity: 'Comum', color: '#64748b' },
-]
+  const maximumCompetencyScore = enemCompetencies.reduce(
+    (total, competency) => total + competency.maximumScore,
+    0,
+  )
 
-export default function ProfileScreen({ navigate: _navigate, events }: NavProps) {
+  const unlockedAchievements = achievements.filter(
+    (achievement) => achievement.unlocked,
+  )
+
+  const lockedAchievements = achievements.filter(
+    (achievement) => !achievement.unlocked,
+  )
+
   return (
-    <div style={{ fontFamily: 'Nunito, sans-serif', minHeight: '100%' }}>
-      {/* Header */}
-      <div
+    <div
+      style={{
+        background: '#f0f4ff',
+        fontFamily: 'Nunito, sans-serif',
+        minHeight: '100%',
+        width: '100%',
+      }}
+    >
+      <header
         style={{
-          background: 'linear-gradient(135deg, #7C3AED 0%, #3B82F6 50%, #22C55E 100%)',
-          padding: '8px 20px 32px',
+          background:
+            'linear-gradient(135deg, #6d28d9 0%, #7c3aed 46%, #2563eb 100%)',
+          color: '#ffffff',
+          padding: '32px clamp(20px, 4vw, 58px) 40px',
         }}
       >
-        {/* Avatar */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              background: 'linear-gradient(135deg, #FCD34D, #F97316)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 40,
-              border: '4px solid rgba(255,255,255,0.7)',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-            }}
-          >
-            🦁
-          </div>
-          <div>
-            <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 900, color: 'white' }}>
-              Lucas Mendes
-            </div>
-            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: 700 }}>
-              Escritor Épico · Nível 12
-            </div>
-          </div>
-          {/* Stats row */}
-          <div style={{ display: 'flex', gap: 0, background: 'rgba(255,255,255,0.15)', borderRadius: 16, overflow: 'hidden', marginTop: 4 }}>
-            {[
-              { label: 'XP Total', value: '14.2k' },
-              { label: 'Ranking', value: '#3' },
-              { label: 'Sequência', value: '18🔥' },
-            ].map((s, i) => (
-              <div
-                key={s.label}
-                style={{
-                  padding: '10px 18px',
-                  borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ color: 'white', fontSize: 16, fontWeight: 900 }}>{s.value}</div>
-                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ padding: '20px 20px' }}>
-        {/* Key stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-          {[
-            { icon: '📝', label: 'Redações', value: '47', sub: 'enviadas' },
-            { icon: '⭐', label: 'Melhor nota', value: '960', sub: 'pontos' },
-            { icon: '📈', label: 'Nota média', value: '820', sub: 'pontos' },
-            { icon: '⚔️', label: 'Missões', value: '83', sub: 'completas' },
-          ].map((s) => (
-            <div
-              key={s.label}
-              style={{
-                background: 'white',
-                borderRadius: 16,
-                padding: '16px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-              }}
-            >
-              <div style={{ fontSize: 26, marginBottom: 6 }}>{s.icon}</div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: '#7C3AED' }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>
-                {s.label} <span style={{ color: '#cbd5e1' }}>·</span> {s.sub}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Competency breakdown */}
         <div
           style={{
-            background: 'white',
-            borderRadius: 18,
-            padding: '18px',
-            marginBottom: 20,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            margin: '0 auto',
+            maxWidth: 1320,
+            width: '100%',
           }}
         >
-          <div style={{ fontWeight: 900, fontSize: 16, color: '#1e293b', marginBottom: 14 }}>
-            📊 Competências
-          </div>
-          {competencies.map((c) => {
-            const pct = (c.score / c.max) * 100
-            return (
-              <div key={c.name} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>{c.name}</span>
-                  <span style={{ fontSize: 12, fontWeight: 900, color: c.color }}>{c.score}</span>
-                </div>
-                <div style={{ height: 8, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${c.color}cc, ${c.color})`,
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-                {c.score < 160 && (
-                  <div style={{ fontSize: 10, color: '#EF4444', fontWeight: 700, marginTop: 3 }}>
-                    ⚠️ Precisa melhorar
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Card collection */}
-        <div style={{ fontWeight: 900, fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
-          🃏 Coleção de Cartas
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
-          {cards.map((c) => (
+          <div
+            style={{
+              alignItems: 'center',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 24,
+              justifyContent: 'space-between',
+            }}
+          >
             <div
-              key={c.name}
               style={{
-                background: 'white',
-                borderRadius: 14,
-                padding: '12px 8px',
-                textAlign: 'center',
-                border: `2px solid ${c.color}44`,
-                boxShadow: `0 2px 8px ${c.color}22`,
+                alignItems: 'center',
+                display: 'flex',
+                flex: '1 1 430px',
+                gap: 19,
               }}
             >
-              <div style={{ fontSize: 26, marginBottom: 4 }}>{c.emoji}</div>
-              <div style={{ fontSize: 10, fontWeight: 900, color: '#1e293b', marginBottom: 2 }}>{c.name}</div>
-              <div style={{ fontSize: 9, color: c.color, fontWeight: 800 }}>{c.rarity}</div>
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  border: '4px solid rgba(255,255,255,0.3)',
+                  borderRadius: 999,
+                  boxShadow:
+                    '0 16px 35px rgba(30, 41, 59, 0.22)',
+                  display: 'flex',
+                  flexShrink: 0,
+                  fontSize: 'clamp(42px, 7vw, 61px)',
+                  height: 'clamp(92px, 14vw, 122px)',
+                  justifyContent: 'center',
+                  width: 'clamp(92px, 14vw, 122px)',
+                }}
+              >
+                {userProfile.avatar}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <span
+                  style={{
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: 11,
+                    fontWeight: 900,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Perfil do estudante
+                </span>
+
+                <h1
+                  style={{
+                    fontSize: 'clamp(25px, 4vw, 39px)',
+                    fontWeight: 900,
+                    lineHeight: 1.1,
+                    margin: '7px 0 5px',
+                  }}
+                >
+                  {userProfile.name}
+                </h1>
+
+                <p
+                  style={{
+                    color: 'rgba(255,255,255,0.78)',
+                    fontSize: 13,
+                    fontWeight: 800,
+                    margin: 0,
+                  }}
+                >
+                  {userProfile.username}
+                </p>
+
+                <div
+                  style={{
+                    alignItems: 'center',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    marginTop: 11,
+                  }}
+                >
+                  <span
+                    style={{
+                      background: 'rgba(255,255,255,0.17)',
+                      border:
+                        '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: 999,
+                      fontSize: 11,
+                      fontWeight: 900,
+                      padding: '7px 11px',
+                    }}
+                  >
+                    ⭐ Nível {userProfile.level}
+                  </span>
+
+                  <span
+                    style={{
+                      background: 'rgba(255,255,255,0.17)',
+                      border:
+                        '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: 999,
+                      fontSize: 11,
+                      fontWeight: 900,
+                      padding: '7px 11px',
+                    }}
+                  >
+                    {userProfile.title}
+                  </span>
+                </div>
+              </div>
             </div>
+
+            <div
+              style={{
+                display: 'grid',
+                flex: '1 1 350px',
+                gap: 10,
+                gridTemplateColumns:
+                  'repeat(auto-fit, minmax(105px, 1fr))',
+                maxWidth: 490,
+                width: '100%',
+              }}
+            >
+              <HeaderStat
+                icon="⚡"
+                value={userProfile.totalXp.toLocaleString('pt-BR')}
+                label="XP total"
+              />
+
+              <HeaderStat
+                icon="🏆"
+                value={`#${userProfile.rankingPosition}`}
+                label="Ranking"
+              />
+
+              <HeaderStat
+                icon="🔥"
+                value={`${userProfile.streakDays} dias`}
+                label="Sequência"
+              />
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.17)',
+              borderRadius: 20,
+              marginTop: 28,
+              padding: 17,
+            }}
+          >
+            <div
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: 9,
+              }}
+            >
+              <div>
+                <strong
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 900,
+                  }}
+                >
+                  Progresso para o nível {userProfile.level + 1}
+                </strong>
+
+                <span
+                  style={{
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: 11,
+                    fontWeight: 700,
+                  }}
+                >
+                  Continue realizando atividades para evoluir.
+                </span>
+              </div>
+
+              <span
+                style={{
+                  color: 'rgba(255,255,255,0.82)',
+                  fontSize: 12,
+                  fontWeight: 900,
+                }}
+              >
+                {userProfile.currentXp.toLocaleString('pt-BR')} /{' '}
+                {userProfile.nextLevelXp.toLocaleString('pt-BR')} XP
+              </span>
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.22)',
+                borderRadius: 999,
+                height: 12,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    'linear-gradient(90deg, #facc15, #f97316)',
+                  borderRadius: 999,
+                  boxShadow:
+                    '0 0 15px rgba(250,204,21,0.55)',
+                  height: '100%',
+                  transition: 'width 300ms ease',
+                  width: `${levelProgress}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main
+        style={{
+          margin: '0 auto',
+          maxWidth: 1320,
+          padding: '27px clamp(18px, 4vw, 58px) 52px',
+          width: '100%',
+        }}
+      >
+        <section
+          style={{
+            display: 'grid',
+            gap: 14,
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(min(100%, 175px), 1fr))',
+          }}
+        >
+          {profileStats.map((stat) => (
+            <ProfileStatCard key={stat.id} stat={stat} />
           ))}
+        </section>
+
+        <div
+          style={{
+            display: 'grid',
+            gap: 23,
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
+            marginTop: 24,
+          }}
+        >
+          <section
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 25,
+              boxShadow:
+                '0 10px 30px rgba(15,23,42,0.06)',
+              padding: 22,
+            }}
+          >
+            <div
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                gap: 13,
+              }}
+            >
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#ede9fe',
+                  borderRadius: 16,
+                  display: 'flex',
+                  fontSize: 27,
+                  height: 52,
+                  justifyContent: 'center',
+                  width: 52,
+                }}
+              >
+                📊
+              </div>
+
+              <div>
+                <h2
+                  style={{
+                    color: '#172033',
+                    fontSize: 18,
+                    fontWeight: 900,
+                    margin: 0,
+                  }}
+                >
+                  Desempenho geral
+                </h2>
+
+                <p
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    margin: '3px 0 0',
+                  }}
+                >
+                  Média simulada das competências.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                alignItems: 'center',
+                background:
+                  'linear-gradient(135deg, #ede9fe, #dbeafe)',
+                border: '1px solid #c4b5fd',
+                borderRadius: 21,
+                display: 'flex',
+                gap: 16,
+                marginTop: 18,
+                padding: 18,
+              }}
+            >
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  borderRadius: 999,
+                  color: '#6d28d9',
+                  display: 'flex',
+                  flexShrink: 0,
+                  fontSize: 25,
+                  fontWeight: 900,
+                  height: 76,
+                  justifyContent: 'center',
+                  width: 76,
+                }}
+              >
+                {totalCompetencyScore}
+              </div>
+
+              <div>
+                <strong
+                  style={{
+                    color: '#172033',
+                    display: 'block',
+                    fontSize: 16,
+                    fontWeight: 900,
+                  }}
+                >
+                  {totalCompetencyScore} de {maximumCompetencyScore} pontos
+                </strong>
+
+                <p
+                  style={{
+                    color: '#64748b',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    lineHeight: 1.5,
+                    margin: '5px 0 0',
+                  }}
+                >
+                  Seu melhor desempenho está nas competências C2 e C4.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('write')}
+              style={{
+                background:
+                  'linear-gradient(90deg, #7c3aed, #3b82f6)',
+                border: 0,
+                borderRadius: 14,
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 900,
+                marginTop: 15,
+                minHeight: 47,
+                width: '100%',
+              }}
+            >
+              Escrever uma redação
+            </button>
+          </section>
+
+          <section
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 25,
+              boxShadow:
+                '0 10px 30px rgba(15,23,42,0.06)',
+              padding: 22,
+            }}
+          >
+            <div
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                gap: 13,
+              }}
+            >
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#dbeafe',
+                  borderRadius: 16,
+                  display: 'flex',
+                  fontSize: 27,
+                  height: 52,
+                  justifyContent: 'center',
+                  width: 52,
+                }}
+              >
+                🃏
+              </div>
+
+              <div>
+                <h2
+                  style={{
+                    color: '#172033',
+                    fontSize: 18,
+                    fontWeight: 900,
+                    margin: 0,
+                  }}
+                >
+                  Coleção de cartas
+                </h2>
+
+                <p
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    margin: '3px 0 0',
+                  }}
+                >
+                  Repertórios e conectivos conquistados.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 22,
+              }}
+            >
+              <div>
+                <strong
+                  style={{
+                    color: '#172033',
+                    display: 'block',
+                    fontSize: 28,
+                    fontWeight: 900,
+                  }}
+                >
+                  {userProfile.unlockedCards}/
+                  {userProfile.totalCards}
+                </strong>
+
+                <span
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  Cartas desbloqueadas
+                </span>
+              </div>
+
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#ede9fe',
+                  borderRadius: 999,
+                  color: '#6d28d9',
+                  display: 'flex',
+                  fontSize: 18,
+                  fontWeight: 900,
+                  height: 66,
+                  justifyContent: 'center',
+                  width: 66,
+                }}
+              >
+                {collectionProgress}%
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#e2e8f0',
+                borderRadius: 999,
+                height: 10,
+                marginTop: 17,
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  background:
+                    'linear-gradient(90deg, #3b82f6, #7c3aed)',
+                  borderRadius: 999,
+                  height: '100%',
+                  width: `${collectionProgress}%`,
+                }}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('library')}
+              style={{
+                background: '#ede9fe',
+                border: 0,
+                borderRadius: 14,
+                color: '#6d28d9',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 900,
+                marginTop: 18,
+                minHeight: 47,
+                width: '100%',
+              }}
+            >
+              Abrir Biblioteca
+            </button>
+          </section>
+
+          <section
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 25,
+              boxShadow:
+                '0 10px 30px rgba(15,23,42,0.06)',
+              padding: 22,
+            }}
+          >
+            <div
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                gap: 13,
+              }}
+            >
+              <div
+                style={{
+                  alignItems: 'center',
+                  background: '#ffedd5',
+                  borderRadius: 16,
+                  display: 'flex',
+                  fontSize: 27,
+                  height: 52,
+                  justifyContent: 'center',
+                  width: 52,
+                }}
+              >
+                🏆
+              </div>
+
+              <div>
+                <h2
+                  style={{
+                    color: '#172033',
+                    fontSize: 18,
+                    fontWeight: 900,
+                    margin: 0,
+                  }}
+                >
+                  Ranking semanal
+                </h2>
+
+                <p
+                  style={{
+                    color: '#94a3b8',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    margin: '3px 0 0',
+                  }}
+                >
+                  Sua posição entre os estudantes.
+                </p>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background:
+                  'linear-gradient(135deg, #fff7ed, #ffedd5)',
+                border: '1px solid #fed7aa',
+                borderRadius: 20,
+                marginTop: 18,
+                padding: 18,
+                textAlign: 'center',
+              }}
+            >
+              <span
+                style={{
+                  color: '#c2410c',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Posição atual
+              </span>
+
+              <strong
+                style={{
+                  color: '#ea580c',
+                  display: 'block',
+                  fontSize: 42,
+                  fontWeight: 900,
+                  marginTop: 3,
+                }}
+              >
+                #{userProfile.rankingPosition}
+              </strong>
+
+              <p
+                style={{
+                  color: '#64748b',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  margin: '4px 0 0',
+                }}
+              >
+                Continue ganhando XP para subir.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('ranking')}
+              style={{
+                background:
+                  'linear-gradient(90deg, #f97316, #ef4444)',
+                border: 0,
+                borderRadius: 14,
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+                fontWeight: 900,
+                marginTop: 15,
+                minHeight: 47,
+                width: '100%',
+              }}
+            >
+              Ver Ranking completo
+            </button>
+          </section>
         </div>
 
-        {/* Achievements */}
-        <div style={{ fontWeight: 900, fontSize: 16, color: '#1e293b', marginBottom: 12 }}>
-          🏅 Conquistas
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {achievements.map((a) => (
-            <div
-              key={a.id}
-              onClick={() => a.earned && events.triggerAchievement({ icon: a.icon, title: a.title, xp: 50 })}
-              style={{ cursor: a.earned ? 'pointer' : 'default',
-                background: a.earned ? 'white' : '#f8fafc',
-                borderRadius: 16,
-                padding: '14px 12px',
-                opacity: a.earned ? 1 : 0.55,
-                border: a.earned ? '2px solid #FEF3C7' : '2px solid transparent',
-                boxShadow: a.earned ? '0 4px 16px rgba(245,158,11,0.15)' : '0 1px 4px rgba(0,0,0,0.04)',
+        <section style={{ marginTop: 28 }}>
+          <div
+            style={{
+              alignItems: 'flex-end',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 12,
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  color: '#7c3aed',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Desempenho no ENEM
+              </span>
+
+              <h2
+                style={{
+                  color: '#172033',
+                  fontSize: 23,
+                  fontWeight: 900,
+                  margin: '5px 0 0',
+                }}
+              >
+                Competências
+              </h2>
+            </div>
+
+            <span
+              style={{
+                background: '#ede9fe',
+                borderRadius: 999,
+                color: '#6d28d9',
+                fontSize: 11,
+                fontWeight: 900,
+                padding: '8px 12px',
               }}
             >
-              <div style={{ fontSize: 28, marginBottom: 6 }}>{a.icon}</div>
-              <div style={{ fontWeight: 900, fontSize: 12, color: '#1e293b', marginBottom: 2 }}>
-                {a.title}
-              </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, lineHeight: 1.3 }}>
-                {a.description}
-              </div>
-              {a.earned && a.date && (
-                <div style={{ fontSize: 10, color: '#D97706', fontWeight: 800, marginTop: 6 }}>
-                  ✓ {a.date}
-                </div>
-              )}
-              {!a.earned && (
-                <div style={{ fontSize: 10, color: '#cbd5e1', fontWeight: 800, marginTop: 6 }}>
-                  🔒 Bloqueada
-                </div>
-              )}
+              Média simulada
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gap: 14,
+              gridTemplateColumns:
+                'repeat(auto-fit, minmax(min(100%, 360px), 1fr))',
+            }}
+          >
+            {enemCompetencies.map((competency) => (
+              <CompetencyCard
+                key={competency.id}
+                competency={competency}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section style={{ marginTop: 30 }}>
+          <div
+            style={{
+              alignItems: 'flex-end',
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: 16,
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  color: '#7c3aed',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Medalhas conquistadas
+              </span>
+
+              <h2
+                style={{
+                  color: '#172033',
+                  fontSize: 23,
+                  fontWeight: 900,
+                  margin: '5px 0 0',
+                }}
+              >
+                Conquistas desbloqueadas
+              </h2>
             </div>
-          ))}
-        </div>
-      </div>
+
+            <span
+              style={{
+                color: '#64748b',
+                fontSize: 12,
+                fontWeight: 800,
+              }}
+            >
+              {unlockedAchievements.length}/{achievements.length}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gap: 14,
+              gridTemplateColumns:
+                'repeat(auto-fit, minmax(min(100%, 290px), 1fr))',
+            }}
+          >
+            {unlockedAchievements.map((achievement) => (
+              <AchievementCard
+                key={achievement.id}
+                achievement={achievement}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section style={{ marginTop: 28 }}>
+          <div style={{ marginBottom: 16 }}>
+            <span
+              style={{
+                color: '#94a3b8',
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: 0.8,
+                textTransform: 'uppercase',
+              }}
+            >
+              Próximos objetivos
+            </span>
+
+            <h2
+              style={{
+                color: '#172033',
+                fontSize: 23,
+                fontWeight: 900,
+                margin: '5px 0 0',
+              }}
+            >
+              Conquistas em progresso
+            </h2>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gap: 14,
+              gridTemplateColumns:
+                'repeat(auto-fit, minmax(min(100%, 290px), 1fr))',
+            }}
+          >
+            {lockedAchievements.map((achievement) => (
+              <AchievementCard
+                key={achievement.id}
+                achievement={achievement}
+              />
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
+  )
+}
+
+interface HeaderStatProps {
+  icon: string
+  value: string
+  label: string
+}
+
+function HeaderStat({
+  icon,
+  value,
+  label,
+}: HeaderStatProps) {
+  return (
+    <div
+      style={{
+        background: 'rgba(255,255,255,0.14)',
+        border: '1px solid rgba(255,255,255,0.18)',
+        borderRadius: 17,
+        padding: '13px 14px',
+      }}
+    >
+      <span style={{ fontSize: 20 }}>{icon}</span>
+
+      <strong
+        style={{
+          display: 'block',
+          fontSize: 19,
+          fontWeight: 900,
+          marginTop: 4,
+        }}
+      >
+        {value}
+      </strong>
+
+      <span
+        style={{
+          color: 'rgba(255,255,255,0.72)',
+          fontSize: 10,
+          fontWeight: 800,
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  )
+}
+
+interface ProfileStatCardProps {
+  stat: ProfileStat
+}
+
+function ProfileStatCard({
+  stat,
+}: ProfileStatCardProps) {
+  return (
+    <article
+      style={{
+        alignItems: 'center',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 20,
+        boxShadow: '0 7px 22px rgba(15,23,42,0.05)',
+        display: 'flex',
+        gap: 13,
+        padding: 17,
+      }}
+    >
+      <div
+        style={{
+          alignItems: 'center',
+          background:
+            'linear-gradient(135deg, #ede9fe, #dbeafe)',
+          borderRadius: 15,
+          display: 'flex',
+          flexShrink: 0,
+          fontSize: 24,
+          height: 48,
+          justifyContent: 'center',
+          width: 48,
+        }}
+      >
+        {stat.icon}
+      </div>
+
+      <div>
+        <strong
+          style={{
+            color: '#172033',
+            display: 'block',
+            fontSize: 18,
+            fontWeight: 900,
+          }}
+        >
+          {stat.value}
+        </strong>
+
+        <span
+          style={{
+            color: '#94a3b8',
+            fontSize: 10,
+            fontWeight: 800,
+          }}
+        >
+          {stat.label}
+        </span>
+      </div>
+    </article>
   )
 }
