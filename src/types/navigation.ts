@@ -1,5 +1,6 @@
 export type AppScreen =
   | 'landing'
+  | 'auth'
   | 'home'
   | 'missions'
   | 'library'

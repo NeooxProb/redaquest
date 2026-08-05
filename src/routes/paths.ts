@@ -2,6 +2,7 @@ import type { AppScreen, MainTab } from '../types/navigation'
 
 export const APP_PATHS: Record<AppScreen, string> = {
   landing: '/',
+  auth: '/entrar',
   home: '/app',
   missions: '/app/missoes',
   library: '/app/biblioteca',
